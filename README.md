@@ -25,6 +25,8 @@ reliable OTA updates, flexible network modes, and peripheral support.
   - Centralized logging API for modules
   - Optional verbose / debug builds
 
+- Some kind of recovery system for booting
+
 ## Peripherals
 
 Vigilant Engine includes drivers / integration for:
