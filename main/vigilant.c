@@ -11,6 +11,7 @@
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_system.h"
+#include "status_led.h"
 
 #include "http_server.h"
 
@@ -131,6 +132,16 @@ static esp_err_t wifi_apply_mode(NW_MODE mode,
 
 esp_err_t vigilant_init(VigilantConfig VgConfig)
 {
+    status_led_config_t led_cfg = {
+        .gpio = CONFIG_VE_STATUS_LED_GPIO,
+        .resolution_hz = 10 * 1000 * 1000,
+        .max_leds = 1,
+        .invert_out = false,
+        .with_dma = false,
+        .mem_block_symbols = 64,
+    };
+    ESP_ERROR_CHECK(status_led_init(&led_cfg));
+
     ESP_LOGI(TAG, "Init NVS");
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

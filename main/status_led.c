@@ -1,4 +1,5 @@
 #include "status_led.h"
+#include "sdkconfig.h"
 
 #include "esp_log.h"
 #include "led_strip.h"
@@ -77,10 +78,14 @@ esp_err_t status_led_init(const status_led_config_t *cfg)
 
 esp_err_t status_led_set_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
+    # if !CONFIG_VE_ENABLE_STATUS_LED
+    return ESP_OK;
+    # else
     if (!s_strip) return ESP_ERR_INVALID_STATE;
     esp_err_t err = led_strip_set_pixel(s_strip, 0, r, g, b);
     if (err != ESP_OK) return err;
     return led_strip_refresh(s_strip);
+    # endif
 }
 
 esp_err_t status_led_off(void)
