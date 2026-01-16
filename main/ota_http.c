@@ -4,6 +4,8 @@
 #include "esp_system.h"
 #include "esp_http_server.h"
 #include "ota_http.h"
+#include "status_led.h"
+
 
 static const char *TAG_OTA = "ota_http";
 
@@ -29,6 +31,7 @@ static esp_err_t reboot_factory_handler(httpd_req_t *req)
 
     vTaskDelay(pdMS_TO_TICKS(300));
     ESP_ERROR_CHECK(esp_ota_set_boot_partition(factory));
+    ESP_ERROR_CHECK(status_led_off());
     esp_restart();
     return ESP_OK;
 }
