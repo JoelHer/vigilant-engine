@@ -26,3 +26,8 @@ idf_component_register(
         led_strip
         cjson
 )
+
+# Ensure web UI is built before compiling the firmware
+if(TARGET ve_web)
+  add_dependencies(${COMPONENT_LIB} ve_web)
+endif()
