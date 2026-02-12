@@ -3,3 +3,4 @@ build
 /.vscode
 sdkconfig*
 /managed_components
+dependencies.lock
