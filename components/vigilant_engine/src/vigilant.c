@@ -15,6 +15,7 @@
 #include "status_led.h"
 
 #include "http_server.h"
+#include "websocket.h"
 
 static const char *TAG = "vigilant";
 
@@ -152,6 +153,9 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
     } else {
         ESP_ERROR_CHECK(ret);
     }
+
+    // Capture ESP-IDF logs early so they can be replayed to websocket clients
+    websocket_init_log_capture();
 
     ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
     snprintf((char*)ap_cfg.ap.ssid, sizeof(ap_cfg.ap.ssid), 
