@@ -213,6 +213,7 @@ static httpd_handle_t start_webserver_internal(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_uri_handlers = 32; // Fixes issue #28: ota_http: Failed to register Vigilant Dashboard GET handler (ESP_ERR_HTTPD_HANDLERS_FULL)
     config.lru_purge_enable = true;
 
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
