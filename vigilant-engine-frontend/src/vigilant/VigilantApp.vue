@@ -1,22 +1,41 @@
 <template>
   <div class="container">
-    <h1>⚡ Vigilant Engine</h1>
-    <div class="device-name">{{ deviceName }}</div>
-    <div class="status"><span class="dot"></span>{{ statusText }}</div>
-
-    <div class="dashboard">
-      <div class="sidebar">
-        <h3>System Controls</h3>
+    <header class="topbar">
+      <div class="title-block">
+        <h1>⚡ Vigilant Engine</h1>
+        <div class="device-name">{{ deviceName }}</div>
+        <div class="status">{{ statusText }}</div>
+      </div>
+      <div class="actions">
         <button class="btn-danger" @click="showRecovery">
           ⚠️ Reboot to Recovery
         </button>
       </div>
+    </header>
 
-      <div class="main-panel">
-        <div class="console-label">System Console</div>
+    <main class="layout">
+      <section class="console-panel">
+        <div class="console-header">
+          <div>
+            <div class="console-title">System Console</div>
+            <div class="console-sub">Live stream from /ws</div>
+          </div>
+          <div class="legend">
+            <span class="pill pill-info">Info</span>
+            <span class="pill pill-warn">Warn</span>
+            <span class="pill pill-error">Error</span>
+          </div>
+        </div>
         <pre ref="consoleEl" class="console" v-html="consoleHtml"></pre>
-      </div>
-    </div>
+      </section>
+
+      <aside class="sidebar">
+        <h3>System Controls</h3>
+        <button class="btn-danger" @click="showRecovery">
+          ⚠️ Reboot to Recovery
+        </button>
+      </aside>
+    </main>
 
     <div class="overlay" :class="{ active: overlayActive }">
       <div class="modal">
@@ -49,7 +68,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+
+const MAX_LOG_LINES = 200;
 
 const deviceName = "Vigilant ESP Test";
 const statusText = "System Operational";
@@ -57,16 +78,15 @@ const statusText = "System Operational";
 const overlayActive = ref(false);
 const proceeding = ref(false);
 
-const lines = ref<string[]>([
-  "System initialized",
-  "All modules loaded",
-  "Ready for operation",
-]);
-
+const lines = ref<string[]>([]);
 const consoleEl = ref<HTMLElement | null>(null);
+const socket = ref<WebSocket | null>(null);
+const reconnectHandle = ref<number | null>(null);
 
 const consoleHtml = computed(() =>
-  lines.value.map((l) => `<span class="dot"></span>${escapeHtml(l)}`).join("\n")
+  lines.value
+    .map((line) => `<span class="log-line ${levelClass(line)}">${escapeHtml(line)}</span>`)
+    .join("\n")
 );
 
 function escapeHtml(s: string) {
@@ -78,13 +98,120 @@ function escapeHtml(s: string) {
     .replaceAll("'", "&#039;");
 }
 
-async function log(msg: string) {
-  lines.value.push(msg);
-  await nextTick();
+function levelClass(line: string) {
+  const match = line.match(/^\s*([IWE])\s*\(/i);
+  const level = match?.[1]?.toUpperCase();
+  if (level === "W") return "log-warn";
+  if (level === "E") return "log-error";
+  if (level === "I") return "log-info";
+  return "log-other";
+}
+
+function startsWithLevel(line: string) {
+  return /^\s*[IWE]\s*\(/i.test(line);
+}
+
+function normalizeLogLines(rawLines: string[]): string[] {
+  const normalized: string[] = [];
+
+  for (const raw of rawLines) {
+    const line = raw.replace(/\r?\n/g, "").trim();
+    if (!line) continue; // drop empty fragments
+
+    if (startsWithLevel(line) || normalized.length === 0) {
+      normalized.push(line);
+    } else {
+      // continuation of previous line: glue with a space
+      normalized[normalized.length - 1] = `${normalized[normalized.length - 1]} ${line}`;
+    }
+  }
+
+  return normalized;
+}
+
+function splitAndNormalize(text: string) {
+  return normalizeLogLines(text.split(/\r?\n/));
+}
+
+const scrollConsoleToBottom = () => {
   if (consoleEl.value) {
     consoleEl.value.scrollTop = consoleEl.value.scrollHeight;
   }
+};
+
+async function pushLine(msg: string) {
+  lines.value = [...lines.value, msg].slice(-MAX_LOG_LINES);
+  await nextTick();
+  scrollConsoleToBottom();
 }
+
+async function log(msg: string) {
+  await pushLine(msg);
+}
+
+function handleLogPayload(raw: unknown) {
+  if (!raw || typeof raw !== "object") return;
+  const payload = raw as { type?: string; line?: unknown; lines?: unknown };
+
+  if (payload.type === "logs" && Array.isArray(payload.lines)) {
+    const normalized = normalizeLogLines(
+      payload.lines.filter((line): line is string => typeof line === "string")
+    );
+    lines.value = normalized.slice(-MAX_LOG_LINES);
+    nextTick().then(scrollConsoleToBottom);
+    return;
+  }
+
+  if (payload.type === "log" && typeof payload.line === "string") {
+    const merged = splitAndNormalize(payload.line);
+    for (const l of merged) {
+      pushLine(l);
+    }
+  }
+}
+
+function scheduleReconnect() {
+  socket.value = null;
+  if (reconnectHandle.value !== null) return;
+  reconnectHandle.value = window.setTimeout(() => {
+    reconnectHandle.value = null;
+    connectLogStream();
+  }, 1500);
+}
+
+function connectLogStream() {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
+
+  socket.value = ws;
+
+  ws.addEventListener("message", (event) => {
+    if (typeof event.data !== "string") return;
+    try {
+      handleLogPayload(JSON.parse(event.data));
+    } catch {
+      // Ignore malformed frames
+    }
+  });
+
+  ws.addEventListener("close", scheduleReconnect);
+  ws.addEventListener("error", () => ws.close());
+}
+
+onMounted(() => {
+  connectLogStream();
+});
+
+onBeforeUnmount(() => {
+  if (reconnectHandle.value !== null) {
+    clearTimeout(reconnectHandle.value);
+    reconnectHandle.value = null;
+  }
+  if (socket.value) {
+    socket.value.close();
+    socket.value = null;
+  }
+});
 
 function showRecovery() {
   overlayActive.value = true;
@@ -122,16 +249,20 @@ async function proceed() {
 
 <style scoped>
 .container {
-  max-width: 900px;
+  max-width: 1280px;
   width: 100%;
-  padding: 32px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: calc(100vh - 32px); /* body padding 16px x2 */
 }
 
 h1 {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   background: linear-gradient(135deg, #60a5fa, #3b82f6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -151,35 +282,43 @@ h1 {
 }
 
 .status {
-  font-size: 0.875rem;
-  color: #10b981;
-  margin-bottom: 32px;
+  font-size: 0.9rem;
+  color: #9ca3af;
   opacity: 0.9;
 }
 
-.dashboard {
+.topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.title-block { display: flex; flex-direction: column; gap: 4px; }
+
+.actions { display: flex; gap: 12px; }
+
+.layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 1fr minmax(240px, 320px);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
-@media (max-width: 768px) {
-  .dashboard { grid-template-columns: 1fr; }
-}
-
-.sidebar,
-.main-panel {
+.console-panel,
+.sidebar {
   background: linear-gradient(145deg, #141922, #0f1319);
   border: 1px solid #1f2937;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .sidebar h3 {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 0.85rem;
+  color: #9ca3af;
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -208,27 +347,60 @@ h1 {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
-.console-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.console-panel { display: flex; flex-direction: column; gap: 10px; }
+
+.console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
+
+.console-title {
+  font-size: 0.9rem;
+  color: #e5e7eb;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.console-sub { font-size: 0.75rem; color: #9ca3af; }
+
+.legend { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: 1px solid #1f2937;
+}
+
+.pill-info { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+.pill-warn { background: rgba(234, 179, 8, 0.12); color: #facc15; }
+.pill-error { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 
 .console {
   background: #0d1117;
   border: 1px solid #1f2937;
-  border-radius: 6px;
-  padding: 16px;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  min-height: 200px;
-  color: #10b981;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 0.84rem;
+  line-height: 1.05;
+  min-height: 220px;
+  max-height: 60vh;
+  color: #e5e7eb;
+  overflow-y: auto;
   overflow-x: auto;
   animation: fadeIn 0.3s;
   white-space: pre-wrap;
 }
+
+:deep(.log-line) { display: block; padding: 0; margin: 0; line-height: 1.05; }
+:deep(.log-info) { color: #34d399; }
+:deep(.log-warn) { color: #fbbf24; }
+:deep(.log-error) { color: #f87171; }
+:deep(.log-other) { color: #9ca3af; }
 
 .overlay {
   position: fixed;

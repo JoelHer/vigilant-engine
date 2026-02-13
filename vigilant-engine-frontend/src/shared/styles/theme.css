@@ -6,13 +6,16 @@
 
 body {
   font-family: ui-monospace, monospace;
-  background: #0a0e14;
+  background: radial-gradient(circle at 20% 20%, rgba(96, 165, 250, 0.08), transparent 25%),
+    radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.06), transparent 22%),
+    #0a0e14;
   color: #d4d4d8;
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 20px;
+  padding: 16px;
+  overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -37,14 +40,4 @@ body {
 @keyframes modalSlide {
   from { transform: translateY(-20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
-}
-
-.dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  margin-right: 8px;
-  animation: pulse 2s infinite;
 }
