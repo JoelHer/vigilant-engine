@@ -161,10 +161,10 @@ Example:
 - `build/vigilant-engine.bin`
 - `recovery/build/vigilant-engine-recovery.bin`
 
-Always booting into the wrong partition
+#### Always booting into the wrong partition
 - `python $IDF_PATH/components/app_update/otatool.py --port /dev/ttyACM0 switch_ota_partition --slot 0`
 
-Troubles with setting flash size:
+#### Troubles with setting flash size:
 - `flash.py` runs `idf.py reconfigure`, which rebuilds the `sdkconfig` from `sdkconfig.defaults`. Therefore the flash size of your esp has to be set there in the appropriate fields.
 
 
