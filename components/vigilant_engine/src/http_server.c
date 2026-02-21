@@ -15,8 +15,6 @@
 #include "esp_netif.h"
 #include "esp_tls_crypto.h"
 
-#include "protocol_examples_common.h"
-#include "protocol_examples_utils.h"
 
 #include "ota_http.h"
 #include "vigilant.h"
@@ -322,20 +320,9 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
 
 esp_err_t http_server_register_event_handlers(void)
 {
-#if !CONFIG_IDF_TARGET_LINUX
-#ifdef CONFIG_EXAMPLE_CONNECT_WIFI
+    // Start server when we get an IP
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP,
                                                &connect_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
-                                               &disconnect_handler, NULL));
-#endif // CONFIG_EXAMPLE_CONNECT_WIFI
-#ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP,
-                                               &connect_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED,
-                                               &disconnect_handler, NULL));
-#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
-#endif // !CONFIG_IDF_TARGET_LINUX
 
     return ESP_OK;
 }
