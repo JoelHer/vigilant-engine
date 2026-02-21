@@ -20,11 +20,9 @@
 #include "vigilant.h"
 #include "websocket.h"
 
-#if !CONFIG_IDF_TARGET_LINUX
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include "nvs_flash.h"
-#endif  // !CONFIG_IDF_TARGET_LINUX
 
 #define EXAMPLE_HTTP_QUERY_KEY_MAX_LEN  (64)
 
