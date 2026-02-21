@@ -15,16 +15,17 @@
 #include "esp_netif.h"
 #include "esp_tls_crypto.h"
 
+#include "protocol_examples_common.h"
+#include "protocol_examples_utils.h"
 
 #include "ota_http.h"
 #include "vigilant.h"
 #include "websocket.h"
+#include "http_server.h"
 
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include "nvs_flash.h"
-
-#define EXAMPLE_HTTP_QUERY_KEY_MAX_LEN  (64)
 
 static const char *TAG = "http_server";
 
