@@ -43,7 +43,6 @@ This project is documented using MkDocs. For full documentation visit [mkdocs.or
 
 ### Commands
 
-* `./.venv/bin/mkdocs new [dir-name]` - Create a new project.
 * `./.venv/bin/mkdocs serve` - Start the live-reloading docs server.
 * `./.venv/bin/mkdocs build` - Build the documentation site.
 * `./.venv/bin/mkdocs -h` - Print help message and exit.
