@@ -14,6 +14,7 @@
 #include "esp_mac.h"
 #include "lwip/inet.h"
 #include "status_led.h"
+#include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h"
@@ -30,8 +31,8 @@ static TimerHandle_t sta_reconnect_timer;
 
 static wifi_config_t sta_cfg = {
     .sta = {
-        .ssid = "aerobear",
-        .password = "aerobear",
+        .ssid = CONFIG_VE_STA_SSID,
+        .password = CONFIG_VE_STA_PASSWORD,
         .channel = 1,
         .threshold.authmode = WIFI_AUTH_WPA2_PSK,
     }
@@ -41,7 +42,7 @@ static wifi_config_t ap_cfg = {
     .ap = {
         .ssid = "aerobear-SETUP",      //made unique in later
         .ssid_len = 0,
-        .password = "aerobear",        // leer => open AP, dann aber auch authmode anpassen
+        .password = CONFIG_VE_AP_PASSWORD,        // leer => open AP, dann aber auch authmode anpassen
         .channel = 1,
         .max_connection = 4,
         .authmode = WIFI_AUTH_WPA2_PSK 
@@ -102,7 +103,7 @@ static esp_err_t wifi_init_once(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_evt, NULL));
 
     sta_reconnect_timer = xTimerCreate("wifi_reconnect", 
-                            pdMS_TO_TICKS(10000), 
+                            pdMS_TO_TICKS(CONFIG_VE_STA_RECONNECT_INTERVAL_MS), 
                             pdFALSE, 
                             (void *)0, 
                             sta_reconnect_callback);
@@ -174,7 +175,7 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
 
     ESP_ERROR_CHECK(esp_read_mac(mac, ESP_MAC_WIFI_STA));
     snprintf((char*)ap_cfg.ap.ssid, sizeof(ap_cfg.ap.ssid), 
-             "aerobear-%02X%02X", mac[4], mac[5]);
+             "%s%02X%02X", CONFIG_VE_AP_SSID_PREFIX, mac[4], mac[5]);
     ESP_LOGI(TAG, "Device MAC: %02X:%02X:%02X:%02X:%02X:%02X", 
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
