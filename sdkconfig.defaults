@@ -29,3 +29,7 @@ CONFIG_HTTPD_WS_SUPPORT=y
 CONFIG_HTTPD_SERVER_EVENT_POST_TIMEOUT=2000
 # CONFIG_HTTPD_WS_PRE_HANDSHAKE_CB_SUPPORT is not set
 # end of HTTP Server
+
+#To enable logging while using the timer
+#Weirdly also fixes the serial time out?
+CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096

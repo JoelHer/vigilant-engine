@@ -15,6 +15,9 @@
 #include "lwip/inet.h"
 #include "status_led.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
+
 #include "http_server.h"
 #include "websocket.h"
 
@@ -23,11 +26,13 @@ static const char *TAG = "vigilant";
 static esp_netif_t *s_netif_sta = NULL;
 static esp_netif_t *s_netif_ap  = NULL;
 static VigilantConfig s_cfg = {0};
+static TimerHandle_t sta_reconnect_timer;
 
 static wifi_config_t sta_cfg = {
     .sta = {
         .ssid = "aerobear",
         .password = "aerobear",
+        .channel = 1,
         .threshold.authmode = WIFI_AUTH_WPA2_PSK,
     }
 };
@@ -63,15 +68,18 @@ void reboot_to_recovery(void)
     esp_restart();
 }
 
+static void sta_reconnect_callback(TimerHandle_t xTimer) {
+    esp_wifi_connect();
+}
+
 static void wifi_evt(void* arg, esp_event_base_t base, int32_t id, void* data)
 {
     if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t *e = (wifi_event_sta_disconnected_t*)data;
         ESP_LOGW("wifi", "STA disconnected, reason=%d", e->reason);
-        // optional: reconnect
-        esp_wifi_connect();
+        xTimerReset(sta_reconnect_timer, 0);
     }
-
+    
     if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *e = (ip_event_got_ip_t*)data;
         ESP_LOGI("wifi", "Got IP: " IPSTR, IP2STR(&e->ip_info.ip));
@@ -93,6 +101,11 @@ static esp_err_t wifi_init_once(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_evt, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_evt, NULL));
 
+    sta_reconnect_timer = xTimerCreate("wifi_reconnect", 
+                            pdMS_TO_TICKS(10000), 
+                            pdFALSE, 
+                            (void *)0, 
+                            sta_reconnect_callback);
 
     inited = true;
     return ESP_OK;
