@@ -14,8 +14,4 @@ void app_main(void)
         .network_mode = NW_MODE_APSTA
     };
     ESP_ERROR_CHECK(vigilant_init(VgConfig));
-
-    while (1) {
-        
-    }
 }
