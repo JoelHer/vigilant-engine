@@ -43,6 +43,13 @@ menu "Vigilant Engine Configuration"
         help
             Enable this option to use the status LED functionality in Vigilant Engine.
             The status LED provides visual feedback on the system's status and operations, and can optionally be used for visual output.
+    
+    config VE_INVERT_STATUS_LED
+        bool "Invert Status LED GPIO"
+        default y
+        help
+            Enable this option to invert the signals sent to the status led. On some boards (e.g S3) LOW means the led turns on.
+            On other boards LOW might turn them off. Not particularly relevant, as it is mostly blinking anyways.
 
     choice VE_STATUS_LED_MODE
         prompt "LED Operation Mode"
