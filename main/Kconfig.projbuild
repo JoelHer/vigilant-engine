@@ -35,7 +35,7 @@ menu "Example Configuration"
 
 endmenu
 
-menu "Vigilant Engine Configuration"
+menu "Vigilant Engine Configuration: LEDs"
 
     config VE_ENABLE_STATUS_LED
         bool "Enable Status LED"
@@ -43,11 +43,56 @@ menu "Vigilant Engine Configuration"
         help
             Enable this option to use the status LED functionality in Vigilant Engine.
             The status LED provides visual feedback on the system's status and operations, and can optionally be used for visual output.
-    config VE_STATUS_LED_GPIO
-        int "Status LED GPIO pin"
-        default 8
+    
+    config VE_INVERT_STATUS_LED
+        bool "Invert Status LED GPIO"
+        default y
         help
-            The GPIO pin number for the status LED.
+            Enable this option to invert the signals sent to the status led. On some boards (e.g S3) LOW means the led turns on.
+            On other boards LOW might turn them off. Not particularly relevant, as it is mostly blinking anyways.
+
+    choice VE_STATUS_LED_MODE
+        prompt "LED Operation Mode"
+        default VE_STATUS_LED_MODE_RGB
+        help
+            Select how the LED conveys status information.
+
+        config VE_STATUS_LED_MODE_RGB
+            bool "RGB (Color-based)"
+        
+        config VE_STATUS_LED_MODE_BLINK
+            bool "BLINK (Frequency-based)"
+    endchoice
+
+    # --- RGB Mode Settings ---
+    config VE_STATUS_LED_GPIO_RED
+        int "Red LED GPIO"
+        range 0 64
+        default 46
+        depends on VE_STATUS_LED_MODE_RGB
+
+    config VE_STATUS_LED_GPIO_GREEN
+        int "Green LED GPIO"
+        range 0 64
+        default 0
+        depends on VE_STATUS_LED_MODE_RGB
+
+    config VE_STATUS_LED_GPIO_BLUE
+        int "Blue LED GPIO"
+        range 0 64
+        default 45
+        depends on VE_STATUS_LED_MODE_RGB
+
+    # --- BLINK Mode Settings ---
+    config VE_STATUS_LED_GPIO_BLINK
+        int "Blink LED GPIO"
+        range 0 64
+        default 48
+        depends on VE_STATUS_LED_MODE_BLINK
+endmenu
+
+menu "Vigilant Engine Configuration: WiFi"
+    # --- Wifi Settings ---
     config VE_STA_SSID
         string "WiFi STA SSID"
         default "aerobear"

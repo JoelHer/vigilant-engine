@@ -23,17 +23,47 @@ The network mode of the esp node.
 - `NW_MODE_AP` AP mode
 - `NW_MODE_STA` STA mode
 ___
-## Menuconfig Settings
+## Menuconfig Settings (Status LED)
 ___
-#### `VE_ENABLE_STATUS_LED`, **bool**
-Enable Status LED, enable this option to use the status LED functionality in Vigilant Engine. The status LED provides visual feedback on the system's status and operations, and can optionally be used for visual output.
+#### `VE_INVERT_STATUS_LED`, **bool**
+Depending on the board and LED, some activate on LOW and some activate on HIGH. To invert and turn the LED on for LOW, set this option to true.
 
 **default**: `1`
 ___
-#### `VE_STATUS_LED_GPIO`, **int**
-The GPIO pin number for the status LED.
+#### `VE_ENABLE_STATUS_LED`, **bool**
+Enable status LED, enable this option to use the status LED functionality in Vigilant Engine. The status LED provides visual feedback on the system's status and operations, and can optionally be used for visual output.
 
-**default**: `8`
+**default**: `1`
+___
+#### `VE_STATUS_LED_MODE`, **enum**
+Choose how the status LED conveys information depending on your board or preference.
+###### Options:
+- `VE_STATUS_LED_MODE_RGB` Shows status information by changing colors and frequency. Suitable for a basic RGB led consisting of three separate GPIO pins.
+- `VE_STATUS_LED_MODE_BLINK` Varies frequency of blinking to match current status. Suitable for a basic led consisting of one GPIO pin.
+
+**default**: `VE_STATUS_LED_MODE_RGB`
+___
+#### `VE_STATUS_LED_GPIO_RED`, **int**
+The GPIO pin number for the red status LED in `RGB` mode.
+
+**default**: `46`
+___
+#### `VE_STATUS_LED_GPIO_GREEN`, **int**
+The GPIO pin number for the green status LED in `RGB` mode.
+
+**default**: `0`
+___
+#### `VE_STATUS_LED_GPIO_BLUE`, **int**
+The GPIO pin number for the blue status LED in `RGB` mode.
+
+**default**: `45`
+___
+#### `VE_STATUS_LED_GPIO_BLINK`, **int**
+The GPIO pin number for the single status LED in `BLINK` mode.
+
+**default**: `48`
+___
+## Menuconfig Settings (WiFi)
 ___
 #### `VE_STA_SSID`, **string**
 The SSID of the WiFi network the Vigilant Engine should connect to.

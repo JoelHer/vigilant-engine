@@ -78,6 +78,7 @@ static void wifi_evt(void* arg, esp_event_base_t base, int32_t id, void* data)
     if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t *e = (wifi_event_sta_disconnected_t*)data;
         ESP_LOGW("wifi", "STA disconnected, reason=%d", e->reason);
+        status_led_set_state(STATUS_STATE_WARNING);
         xTimerReset(sta_reconnect_timer, 0);
     }
     
@@ -151,15 +152,6 @@ static esp_err_t wifi_apply_mode(NW_MODE mode,
 esp_err_t vigilant_init(VigilantConfig VgConfig)
 {
     uint8_t mac[6];
-    status_led_config_t led_cfg = {
-        .gpio = CONFIG_VE_STATUS_LED_GPIO,
-        .resolution_hz = 10 * 1000 * 1000,
-        .max_leds = 1,
-        .invert_out = false,
-        .with_dma = false,
-        .mem_block_symbols = 64,
-    };
-    ESP_ERROR_CHECK(status_led_init(&led_cfg));
 
     ESP_LOGI(TAG, "Init NVS");
     esp_err_t ret = nvs_flash_init();
@@ -169,6 +161,8 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
     } else {
         ESP_ERROR_CHECK(ret);
     }
+
+    configure_led();
 
     // Capture ESP-IDF logs early so they can be replayed to websocket clients
     websocket_init_log_capture();
@@ -203,6 +197,10 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
     ESP_LOGI(TAG, "Vigilant initialized successfully!");
     ESP_LOGI(TAG, "This node unique name is: %s", VgConfig.unique_component_name);
     s_cfg = VgConfig;
+
+    //Set info status once
+    status_led_set_state(STATUS_STATE_INFO);
+
     return ESP_OK;
 }
 

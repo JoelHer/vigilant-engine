@@ -1,4 +1,4 @@
-set(requires esp-tls nvs_flash esp_netif esp_http_server)
+set(requires esp-tls nvs_flash esp_netif esp_http_server driver)
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(build_dir BUILD_DIR)
 
