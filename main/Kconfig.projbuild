@@ -35,7 +35,7 @@ menu "Example Configuration"
 
 endmenu
 
-menu "Vigilant Engine Configuration"
+menu "Vigilant Engine Configuration: LEDs"
 
     config VE_ENABLE_STATUS_LED
         bool "Enable Status LED"
@@ -89,7 +89,9 @@ menu "Vigilant Engine Configuration"
         range 0 64
         default 48
         depends on VE_STATUS_LED_MODE_BLINK
-        
+endmenu
+
+menu "Vigilant Engine Configuration: WiFi"
     # --- Wifi Settings ---
     config VE_STA_SSID
         string "WiFi STA SSID"
