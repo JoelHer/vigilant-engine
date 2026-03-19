@@ -23,6 +23,7 @@ Vigilant Engine provides a common set of capabilities intended to be reused acro
 
 - Wireless logging over network (websocket, visible on the dashboard)
 - Centralized logging API for modules
+- Status LED
 
 ## Recovery app
 - Boots when the main app boot-loops
