@@ -15,13 +15,6 @@ typedef enum {
     STATUS_STATE_OFF
 } status_state_t;
 
-static struct {
-    uint32_t on_ms, off_ms;
-    uint8_t state;
-    uint8_t gpio;
-    bool running;
-} s_blink = {0};
-
 //esp_err_t status_led_init(const status_led_config_t *cfg);
 //esp_err_t status_led_set_rgb(uint8_t r, uint8_t g, uint8_t b);
 //esp_err_t status_led_off(void);

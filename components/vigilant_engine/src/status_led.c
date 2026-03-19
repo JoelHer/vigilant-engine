@@ -13,6 +13,12 @@
     #define INVERT_LED 0
 #endif
 
+#if defined(CONFIG_VE_ENABLE_STATUS_LED)
+    #define ENABLE_LED 1
+#else
+    #define ENABLE_LED 0
+#endif
+
 /*
 Choose mode depending on board or preference
 
@@ -31,15 +37,28 @@ typedef enum {
     MODE_BLINK
 } led_mode_t;
 
-static TaskHandle_t s_blink_task = NULL;
+static struct {
+    uint32_t on_ms, off_ms;
+    uint8_t state;
+    uint8_t gpio;
+    bool running;
+} s_blink = {0};
+
 uint8_t led_on = 1;
 uint8_t led_off = 0;
+
+static TaskHandle_t s_blink_task = NULL;
+
 
 void configure_led()
 {
     if (INVERT_LED) {
         led_on = 0;
         led_off = 1;
+    }
+
+    if (!ENABLE_LED) {
+        return;
     }
 
 #if defined(CONFIG_VE_STATUS_LED_MODE_RGB)
@@ -60,7 +79,7 @@ void configure_led()
 static void blink_led(uint8_t led_gpio)
 {
     // Set the GPIO level according to the state (LOW or HIGH)
-    gpio_set_level(led_gpio, s_blink.state);
+    gpio_set_level(led_gpio, s_blink.state ? led_on : led_off);
 }
 
 static void blink_task(void *arg)
@@ -95,6 +114,7 @@ esp_err_t status_led_blink_stop(void)
     if (s_blink_task != NULL) {
         vTaskDelete(s_blink_task);
         s_blink_task = NULL;
+        gpio_set_level(s_blink.gpio, led_off);
     }
     
     s_blink.running = false;
@@ -102,6 +122,10 @@ esp_err_t status_led_blink_stop(void)
 }
 
 esp_err_t status_led_set_state(status_state_t state) {
+#if(!ENABLE_LED)
+    return ESP_OK;
+#endif
+
 #if defined(CONFIG_VE_STATUS_LED_MODE_RGB)
     switch (state) {
         case STATUS_STATE_INFO:
