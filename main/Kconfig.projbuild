@@ -46,7 +46,7 @@ menu "Vigilant Engine Configuration"
 
     choice VE_STATUS_LED_MODE
         prompt "LED Operation Mode"
-        default STATUS_LED_MODE_RGB
+        default VE_STATUS_LED_MODE_RGB
         help
             Select how the LED conveys status information.
 
@@ -68,7 +68,7 @@ menu "Vigilant Engine Configuration"
         int "Green LED GPIO"
         range 0 64
         default 0
-        depends on STATUS_LED_MODE_RGB
+        depends on VE_STATUS_LED_MODE_RGB
 
     config VE_STATUS_LED_GPIO_BLUE
         int "Blue LED GPIO"

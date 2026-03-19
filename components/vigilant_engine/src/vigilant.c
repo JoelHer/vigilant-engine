@@ -148,6 +148,8 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
         ESP_ERROR_CHECK(ret);
     }
 
+    configure_led();
+
     // Capture ESP-IDF logs early so they can be replayed to websocket clients
     websocket_init_log_capture();
 
@@ -182,8 +184,7 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
     ESP_LOGI(TAG, "This node unique name is: %s", VgConfig.unique_component_name);
     s_cfg = VgConfig;
 
-    configure_led(BLINK);
-    status_led_set_state(STATUS_STATE_ERROR, BLINK);
+    status_led_set_state(STATUS_STATE_INFO);
 
     return ESP_OK;
 }
