@@ -19,7 +19,7 @@ typedef enum {
 //esp_err_t status_led_set_rgb(uint8_t r, uint8_t g, uint8_t b);
 //esp_err_t status_led_off(void);
 //esp_err_t status_led_deinit(void);
-void configure_led();
+esp_err_t configure_led();
 
 esp_err_t status_led_set_state(status_state_t state);
 

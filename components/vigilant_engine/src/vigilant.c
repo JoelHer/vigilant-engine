@@ -162,7 +162,10 @@ esp_err_t vigilant_init(VigilantConfig VgConfig)
         ESP_ERROR_CHECK(ret);
     }
 
-    configure_led();
+    esp_err_t err = configure_led();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure status LED: %s", esp_err_to_name(err));
+    }
 
     // Capture ESP-IDF logs early so they can be replayed to websocket clients
     websocket_init_log_capture();
